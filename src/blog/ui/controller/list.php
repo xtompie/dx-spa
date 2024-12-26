@@ -10,9 +10,9 @@ app.blog.ui.controller.list = (function() {
         { posts: app.blog.application.repository.postRepository.findAll() },
     );
 })();
-app.router.register('/blog', app.blog.ui.controller.list);
-// app.router.path('/blog');
-// app.router.controller(app.blog.ui.controller.list);
+app.shared.router.register('/blog', app.blog.ui.controller.list);
+// app.shared.router.path('/blog');
+// app.shared.router.controller(app.blog.ui.controller.list);
 </script>
 
 <template blog-list>
@@ -27,7 +27,7 @@ app.router.register('/blog', app.blog.ui.controller.list);
         <h2
             val
             val-set="(v) => { this.attr('blog-list-item-id', v.id); this.textContent = v.title; }"
-            onclick="app.router.controller(app.blog.ui.controller.detail, {id: this.attr('blog-list-item-id')})"
+            onclick="app.shared.router.controller(app.blog.ui.controller.detail, {id: this.attr('blog-list-item-id')})"
         ></h2>
         <p val="time" val-key="published"></p>
         <p val="text" val-key="body"></p>

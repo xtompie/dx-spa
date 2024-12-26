@@ -15,9 +15,9 @@ app.blog.ui.controller.detail = (function(id) {
         post,
     );
 })();
-app.router.register('/blog/:id', app.blog.ui.controller.detail);
-// app.router.path('/blog', {id: '1'});
-// app.router.controller(app.blog.ui.controller.detail, {id: '1'});
+app.shared.router.register('/blog/:id', app.blog.ui.controller.detail);
+// app.shared.router.path('/blog', {id: '1'});
+// app.shared.router.controller(app.blog.ui.controller.detail, {id: '1'});
 </script>
 
 <template blog-detail>
