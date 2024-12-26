@@ -1,6 +1,8 @@
 <script>
-app.module.blog = app.module.blog || {};
-app.module.blog.postRepository = (function() {
+app.blog = app.blog || {};
+app.blog.application = app.blog.application || {};
+app.blog.application.repository = app.blog.application.repository || {};
+app.blog.application.repository.postRepository = (function() {
     let data = [
         { id: '1', title: 'Post 1', published: '2021-01-01', body: 'This is the first post.' },
         { id: '1',  title: 'Post 2', published: '2021-01-02', body: 'This is the second post.' },

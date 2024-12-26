@@ -8,7 +8,7 @@
     <?php include 'src/blog/index.php' ?>
     <div app></div>
     <script>
-        app.bootstrap();
+        app.shared.bootstrap();
     </script>
 </body>
 
