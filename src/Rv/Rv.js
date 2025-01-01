@@ -1,4 +1,5 @@
 const Rv = (() => {
+
     const create = (initialValue, callback) => {
         let value = initialValue;
         let initialized = callback ? false : true;
@@ -39,12 +40,12 @@ const Rv = (() => {
         };
     };
 
-    const val = (initialValue) => create(initialValue);
-
     const lazy = (callback) => create(undefined, callback);
 
+    const val = (initialValue) => create(initialValue);
+
     return {
-        val,
         lazy,
+        val,
     };
 })();

@@ -54,19 +54,15 @@ App.Add = (() => {
         }
     }
 
-    const Exit = () => {
-        App.Router.Navigate(App.Index.Controller);
-    }
+    const Exit = () => App.Router.Navigate(App.Index.Controller);
 
-    const FocusInput = () => {
-        App.Window.Content().one('[app-add-focus]').focus();
-    }
+    const FocusInput = () => App.Window.Content().one('[app-add-focus]').focus();
 
     return {
         Boot,
         Controller,
-        Submit,
         InputKeyDown,
+        Submit,
     };
 
 })();
@@ -153,14 +149,11 @@ App.Detail = (() => {
         if (!task) {
             return App.Error.NotFound();
         }
-        App.Window.Title(`${task.content.cut(40)}`);
+        App.Window.Title(`${task.content.cut(20)}`);
         App.Window.Toolbar().render('[app-detail-tpl-toolbar]', task);
         App.Window.Content().render('[app-detail-tpl]', task);
     };
 
-    const Exit = () => {
-        App.Router.Navigate(App.Index.Controller);
-    }
 
     const MarkAsDone = () => {
         task.status = App.Task.Status.DONE;
@@ -180,9 +173,7 @@ App.Detail = (() => {
         App.Router.Refresh();
     }
 
-    const Edit = () => {
-        App.Router.Navigate(App.Edit.Controller, { id: task.id });
-    }
+    const Edit = () => App.Router.Navigate(App.Edit.Controller, { id: task.id });
 
     const Delete = () => {
         if (!window.confirm('Are you sure you want to delete this task?')) {
@@ -191,6 +182,8 @@ App.Detail = (() => {
         App.Task.Delete(task.id);
         App.Router.Navigate(App.Index.Controller);
     }
+
+    const Exit = () => App.Router.Navigate(App.Index.Controller);
 
     return {
         Boot,
@@ -269,15 +262,11 @@ App.Edit = (() => {
         if (!task) {
             return App.Error.NotFound();
         }
-        App.Window.Title(task.content.cut(40));
+        App.Window.Title(task.content.cut(20));
         App.Window.Toolbar().render('[app-edit-tpl-toolbar]', task);
         App.Window.Content().render('[app-edit-tpl]', task);
         FocusInput();
     };
-
-    const Exit = () => {
-        App.Router.Navigate(App.Detail.Controller, { id: task.id });
-    }
 
     const InputKeyDown = (e) => {
         if (e.combo('Enter')) {
@@ -305,15 +294,15 @@ App.Edit = (() => {
         Exit();
     }
 
-    const FocusInput = () => {
-        App.Window.Content().one('[app-edit-focus]').focus();
-    }
+    const FocusInput = () => App.Window.Content().one('[app-edit-focus]').focus();
+
+    const Exit = () => App.Router.Navigate(App.Detail.Controller, { id: task.id });
 
     return {
         Boot,
         Controller,
-        Submit,
         InputKeyDown,
+        Submit,
     };
 
 })();
@@ -359,6 +348,14 @@ App.Edit = (() => {
 <script>
 App.Error = (() => {
 
+    const Content = (errors) => {
+        App.Window.Content().all('[app-error-content]').each(el => {
+            const key = el.attr('app-error-content');
+            const tpl = el.attr('app-error-content-tpl');
+            el.render(tpl, errors[key] ? { error: errors[key] } : {});
+        });
+    };
+
     const NotFound = () => {
         App.Window.Title('Not Found');
         App.Window.Content().render('[app-error-tpl-notfound]', {
@@ -366,17 +363,9 @@ App.Error = (() => {
         });
     };
 
-    const Content = (errors) => {
-        App.Window.Content().all('[app-error-content]').each(el => {
-            const key = el.attr('app-error-content');
-            const tpl = el.attr('app-error-content-tpl');
-            el.render(tpl, errors[key] ? { error: errors[key] } : {});
-        });
-    }
-
     return {
-        NotFound,
         Content,
+        NotFound,
     };
 
 })();
@@ -411,13 +400,9 @@ App.Gen = (() => {
 <script>
 App.Index = (() => {
 
-    const Boot = () => {
-        App.Router.Register(App.Index.Controller, '/');
-    };
+    const Boot = () => App.Router.Register(App.Index.Controller, '/');
 
-    const Controller = () => {
-        App.Router.Navigate(App.List.Controller);
-    };
+    const Controller = () => App.Router.Navigate(App.List.Controller);
 
     return {
         Boot,
@@ -430,6 +415,8 @@ App.Index = (() => {
 App.Keybind = (() => {
 
     const binds = new Map();
+
+    const Boot = () => window.addEventListener('keydown', HandleKeydown);
 
     const Register = (controller) => {
         if (!binds.has(controller)) {
@@ -475,13 +462,9 @@ App.Keybind = (() => {
         }
     };
 
-    const Boot = () => {
-        window.addEventListener('keydown', HandleKeydown);
-    };
-
     return {
-        Register,
         Boot,
+        Register,
     };
 
 })();
@@ -517,50 +500,39 @@ App.List = (() => {
         });
     };
 
-    const ItemClick = (el) => {
-        App.Router.Navigate(App.Detail.Controller, {id: el.attr('app-list-task-id')});
-    };
+    const ItemClick = (el) => GoToDetail(el.attr('app-list-task-id'));
 
-    const GoToAdd = () => {
-        App.Router.Navigate(App.Add.Controller);
-    };
+    const GoToAdd = () => App.Router.Navigate(App.Add.Controller);
 
-    const GoToTodo = () => {
-        App.Router.Navigate(App.List.Controller);
-    }
+    const GoToTodo = () => App.Router.Navigate(App.List.Controller);
 
-    const FocusSeach = () => {
-        App.Window.Toolbar().one('[app-list-search]').focus();
-    }
+    const GoToDetail = (id) => App.Router.Navigate(App.Detail.Controller, {id});
+
+    const GoToSearch = (search) => App.Router.Navigate(App.List.Controller, {search});
+
+    const FocusSeach = () => App.Window.Toolbar().one('[app-list-search]').focus();
 
     const SearchKeydown = (n, e) => {
         if (e.key === 'Escape') {
             n.blur();
         }
         if (e.key === 'Enter') {
-            App.Router.Navigate(App.List.Controller, {search: n.value});
+            GoToSearch(n.value);
         }
     }
 
     const Enter = () => {
         const selected = Selected();
-        if (!selected) {
-            return;
+        if (selected) {
+            GoToDetail(selected.attr('app-list-task-id'));
         }
-        App.Router.Navigate(App.Detail.Controller, {id: selected.attr('app-list-task-id')});
     }
 
-    const Up = () => {
-        NextPrev('prev');
-    }
+    const Up = () => NextPrev('prev');
 
-    const Down = () => {
-        NextPrev('next');
-    }
+    const Down = () => NextPrev('next');
 
-    const Selected = () => {
-        return App.Window.Content().one('[app-list-task-selected]');
-    }
+    const Selected = () => App.Window.Content().one('[app-list-task-selected]');
 
     const NextPrev = (dir) => {
         Select(
@@ -612,7 +584,6 @@ App.List = (() => {
         const next = items[index];
         select(next);
     };
-
 
     return {
         Boot,
@@ -704,21 +675,16 @@ App.List = (() => {
 </template>
 <script>
 App.Router = (() => {
+
     const routes = [];
     let currentRoute = null;
-    const onBeforeNavigateListeners = [];
-    const onAfterNavigateListeners = [];
     let basePath = null;
 
-    const Register = (handler, path) => {
-        routes.push({ handler, path, regex: PathToRegex(path) });
-    };
+    const Register = (handler, path) => routes.push({ handler, path, regex: PathToRegex(path) });
 
-    const PathToRegex = (path) =>
-        new RegExp("^" + path.replace(/\{([a-zA-Z]+)\?\}/g, "([^/]*)").replace(/\{([a-zA-Z]+)\}/g, "([^/]+)") + "$");
+    const PathToRegex = (path) => new RegExp("^" + path.replace(/\{([a-zA-Z]+)\?\}/g, "([^/]*)").replace(/\{([a-zA-Z]+)\}/g, "([^/]+)") + "$");
 
-    const FindRouteByPath = (path) =>
-        routes.find(route => route.regex.test(path.replace(basePath, "")));
+    const FindRouteByPath = (path) => routes.find(route => route.regex.test(path.replace(basePath, "")));
 
     const ExtractParams = (route, path) => {
         const cleanPath = path.replace(basePath, "");
@@ -742,13 +708,13 @@ App.Router = (() => {
     };
 
     const Navigate = (handler, params = {}) => {
-        onBeforeNavigateListeners.each(l => l());
+        onBeforeNavigateListeners.notify();
 
         const route = routes.find(r => r.handler === handler);
         if (!route) {
             currentRoute = null;
             App.Error.NotFound();
-            onAfterNavigateListeners.each(l => l());
+            onAfterNavigateListeners.notify();
             return;
         }
 
@@ -771,32 +737,39 @@ App.Router = (() => {
         currentRoute = route;
         window.history.pushState({}, "", fullPath);
         HandleRoute();
-        onAfterNavigateListeners.each(l => l());
+        onAfterNavigateListeners.notify();
     };
 
-    const CurrentController = () => {
-        return currentRoute ? currentRoute.handler : null;
+    const Refresh = () => {
+        onBeforeNavigateListeners.notify();
+        HandleRoute();
+        onAfterNavigateListeners.notify();
     };
+
+    const CurrentController = () => currentRoute ? currentRoute.handler : null;
 
     const Boot = () => {
         basePath = window.location.pathname.includes("/dx-spa/") ? "/dx-spa" : "";
         window.addEventListener("popstate", HandleRoute);
-        onBeforeNavigateListeners.each(l => l());
+        onBeforeNavigateListeners.notify();
         HandleRoute();
-        onAfterNavigateListeners.each(l => l());
+        onAfterNavigateListeners.notify();
     };
 
-    const OnBeforeNavigate = (listener) => {
-        onBeforeNavigateListeners.push(listener);
+    const Listeners = () => {
+        const listeners = [];
+        return {
+            add: (listener) => listeners.push(listener),
+            notify: () => listeners.forEach(listener => listener()),
+        };
     };
 
-    const OnAfterNavigate = (listener) => {
-        onAfterNavigateListeners.push(listener);
-    };
+    const onBeforeNavigateListeners = Listeners();
+    const onAfterNavigateListeners = Listeners();
 
-    const Refresh = () => {
-        HandleRoute();
-    };
+    const OnBeforeNavigate = (listener) => onBeforeNavigateListeners.add(listener);
+
+    const OnAfterNavigate = (listener) => onAfterNavigateListeners.add(listener);
 
     return {
         Boot,
@@ -812,6 +785,7 @@ App.Router = (() => {
 </script>
 <script>
 const Rv = (() => {
+
     const create = (initialValue, callback) => {
         let value = initialValue;
         let initialized = callback ? false : true;
@@ -852,13 +826,13 @@ const Rv = (() => {
         };
     };
 
-    const val = (initialValue) => create(initialValue);
-
     const lazy = (callback) => create(undefined, callback);
 
+    const val = (initialValue) => create(initialValue);
+
     return {
-        val,
         lazy,
+        val,
     };
 })();
 </script>

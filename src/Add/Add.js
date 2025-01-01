@@ -39,19 +39,15 @@ App.Add = (() => {
         }
     }
 
-    const Exit = () => {
-        App.Router.Navigate(App.Index.Controller);
-    }
+    const Exit = () => App.Router.Navigate(App.Index.Controller);
 
-    const FocusInput = () => {
-        App.Window.Content().one('[app-add-focus]').focus();
-    }
+    const FocusInput = () => App.Window.Content().one('[app-add-focus]').focus();
 
     return {
         Boot,
         Controller,
-        Submit,
         InputKeyDown,
+        Submit,
     };
 
 })();

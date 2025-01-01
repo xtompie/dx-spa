@@ -28,50 +28,39 @@ App.List = (() => {
         });
     };
 
-    const ItemClick = (el) => {
-        App.Router.Navigate(App.Detail.Controller, {id: el.attr('app-list-task-id')});
-    };
+    const ItemClick = (el) => GoToDetail(el.attr('app-list-task-id'));
 
-    const GoToAdd = () => {
-        App.Router.Navigate(App.Add.Controller);
-    };
+    const GoToAdd = () => App.Router.Navigate(App.Add.Controller);
 
-    const GoToTodo = () => {
-        App.Router.Navigate(App.List.Controller);
-    }
+    const GoToTodo = () => App.Router.Navigate(App.List.Controller);
 
-    const FocusSeach = () => {
-        App.Window.Toolbar().one('[app-list-search]').focus();
-    }
+    const GoToDetail = (id) => App.Router.Navigate(App.Detail.Controller, {id});
+
+    const GoToSearch = (search) => App.Router.Navigate(App.List.Controller, {search});
+
+    const FocusSeach = () => App.Window.Toolbar().one('[app-list-search]').focus();
 
     const SearchKeydown = (n, e) => {
         if (e.key === 'Escape') {
             n.blur();
         }
         if (e.key === 'Enter') {
-            App.Router.Navigate(App.List.Controller, {search: n.value});
+            GoToSearch(n.value);
         }
     }
 
     const Enter = () => {
         const selected = Selected();
-        if (!selected) {
-            return;
+        if (selected) {
+            GoToDetail(selected.attr('app-list-task-id'));
         }
-        App.Router.Navigate(App.Detail.Controller, {id: selected.attr('app-list-task-id')});
     }
 
-    const Up = () => {
-        NextPrev('prev');
-    }
+    const Up = () => NextPrev('prev');
 
-    const Down = () => {
-        NextPrev('next');
-    }
+    const Down = () => NextPrev('next');
 
-    const Selected = () => {
-        return App.Window.Content().one('[app-list-task-selected]');
-    }
+    const Selected = () => App.Window.Content().one('[app-list-task-selected]');
 
     const NextPrev = (dir) => {
         Select(
@@ -123,7 +112,6 @@ App.List = (() => {
         const next = items[index];
         select(next);
     };
-
 
     return {
         Boot,

@@ -2,6 +2,8 @@ App.Keybind = (() => {
 
     const binds = new Map();
 
+    const Boot = () => window.addEventListener('keydown', HandleKeydown);
+
     const Register = (controller) => {
         if (!binds.has(controller)) {
             binds.set(controller, new Map());
@@ -46,13 +48,9 @@ App.Keybind = (() => {
         }
     };
 
-    const Boot = () => {
-        window.addEventListener('keydown', HandleKeydown);
-    };
-
     return {
-        Register,
         Boot,
+        Register,
     };
 
 })();

@@ -12,15 +12,11 @@ App.Edit = (() => {
         if (!task) {
             return App.Error.NotFound();
         }
-        App.Window.Title(task.content.cut(40));
+        App.Window.Title(task.content.cut(20));
         App.Window.Toolbar().render('[app-edit-tpl-toolbar]', task);
         App.Window.Content().render('[app-edit-tpl]', task);
         FocusInput();
     };
-
-    const Exit = () => {
-        App.Router.Navigate(App.Detail.Controller, { id: task.id });
-    }
 
     const InputKeyDown = (e) => {
         if (e.combo('Enter')) {
@@ -48,15 +44,15 @@ App.Edit = (() => {
         Exit();
     }
 
-    const FocusInput = () => {
-        App.Window.Content().one('[app-edit-focus]').focus();
-    }
+    const FocusInput = () => App.Window.Content().one('[app-edit-focus]').focus();
+
+    const Exit = () => App.Router.Navigate(App.Detail.Controller, { id: task.id });
 
     return {
         Boot,
         Controller,
-        Submit,
         InputKeyDown,
+        Submit,
     };
 
 })();

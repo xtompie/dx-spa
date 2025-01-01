@@ -17,14 +17,11 @@ App.Detail = (() => {
         if (!task) {
             return App.Error.NotFound();
         }
-        App.Window.Title(`${task.content.cut(40)}`);
+        App.Window.Title(`${task.content.cut(20)}`);
         App.Window.Toolbar().render('[app-detail-tpl-toolbar]', task);
         App.Window.Content().render('[app-detail-tpl]', task);
     };
 
-    const Exit = () => {
-        App.Router.Navigate(App.Index.Controller);
-    }
 
     const MarkAsDone = () => {
         task.status = App.Task.Status.DONE;
@@ -44,9 +41,7 @@ App.Detail = (() => {
         App.Router.Refresh();
     }
 
-    const Edit = () => {
-        App.Router.Navigate(App.Edit.Controller, { id: task.id });
-    }
+    const Edit = () => App.Router.Navigate(App.Edit.Controller, { id: task.id });
 
     const Delete = () => {
         if (!window.confirm('Are you sure you want to delete this task?')) {
@@ -55,6 +50,8 @@ App.Detail = (() => {
         App.Task.Delete(task.id);
         App.Router.Navigate(App.Index.Controller);
     }
+
+    const Exit = () => App.Router.Navigate(App.Index.Controller);
 
     return {
         Boot,

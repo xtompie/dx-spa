@@ -1,19 +1,14 @@
 App.Router = (() => {
+
     const routes = [];
     let currentRoute = null;
-    const onBeforeNavigateListeners = [];
-    const onAfterNavigateListeners = [];
     let basePath = null;
 
-    const Register = (handler, path) => {
-        routes.push({ handler, path, regex: PathToRegex(path) });
-    };
+    const Register = (handler, path) => routes.push({ handler, path, regex: PathToRegex(path) });
 
-    const PathToRegex = (path) =>
-        new RegExp("^" + path.replace(/\{([a-zA-Z]+)\?\}/g, "([^/]*)").replace(/\{([a-zA-Z]+)\}/g, "([^/]+)") + "$");
+    const PathToRegex = (path) => new RegExp("^" + path.replace(/\{([a-zA-Z]+)\?\}/g, "([^/]*)").replace(/\{([a-zA-Z]+)\}/g, "([^/]+)") + "$");
 
-    const FindRouteByPath = (path) =>
-        routes.find(route => route.regex.test(path.replace(basePath, "")));
+    const FindRouteByPath = (path) => routes.find(route => route.regex.test(path.replace(basePath, "")));
 
     const ExtractParams = (route, path) => {
         const cleanPath = path.replace(basePath, "");
@@ -37,13 +32,13 @@ App.Router = (() => {
     };
 
     const Navigate = (handler, params = {}) => {
-        onBeforeNavigateListeners.each(l => l());
+        onBeforeNavigateListeners.notify();
 
         const route = routes.find(r => r.handler === handler);
         if (!route) {
             currentRoute = null;
             App.Error.NotFound();
-            onAfterNavigateListeners.each(l => l());
+            onAfterNavigateListeners.notify();
             return;
         }
 
@@ -66,32 +61,39 @@ App.Router = (() => {
         currentRoute = route;
         window.history.pushState({}, "", fullPath);
         HandleRoute();
-        onAfterNavigateListeners.each(l => l());
+        onAfterNavigateListeners.notify();
     };
 
-    const CurrentController = () => {
-        return currentRoute ? currentRoute.handler : null;
+    const Refresh = () => {
+        onBeforeNavigateListeners.notify();
+        HandleRoute();
+        onAfterNavigateListeners.notify();
     };
+
+    const CurrentController = () => currentRoute ? currentRoute.handler : null;
 
     const Boot = () => {
         basePath = window.location.pathname.includes("/dx-spa/") ? "/dx-spa" : "";
         window.addEventListener("popstate", HandleRoute);
-        onBeforeNavigateListeners.each(l => l());
+        onBeforeNavigateListeners.notify();
         HandleRoute();
-        onAfterNavigateListeners.each(l => l());
+        onAfterNavigateListeners.notify();
     };
 
-    const OnBeforeNavigate = (listener) => {
-        onBeforeNavigateListeners.push(listener);
+    const Listeners = () => {
+        const listeners = [];
+        return {
+            add: (listener) => listeners.push(listener),
+            notify: () => listeners.forEach(listener => listener()),
+        };
     };
 
-    const OnAfterNavigate = (listener) => {
-        onAfterNavigateListeners.push(listener);
-    };
+    const onBeforeNavigateListeners = Listeners();
+    const onAfterNavigateListeners = Listeners();
 
-    const Refresh = () => {
-        HandleRoute();
-    };
+    const OnBeforeNavigate = (listener) => onBeforeNavigateListeners.add(listener);
+
+    const OnAfterNavigate = (listener) => onAfterNavigateListeners.add(listener);
 
     return {
         Boot,
