@@ -4,7 +4,7 @@ Example vanilia JS SPA TODO app using [DX](https://github.com/xtompie/dx) and [D
 
 ## Demo
 
-https://xtompie.github.io/dx-spa/
+<https://xtompie.github.io/dx-spa/>
 
 ## Description
 
