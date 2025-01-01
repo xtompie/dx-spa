@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+
+<script>
+    const App = {};
+</script>
+
+<script>
+App.Add = (() => {
+
+    const Boot = () => {
+        App.Router.Register(App.Add.Controller, '/add');
+        App.Keybind.Register(App.Add.Controller).Combo('Escape', Exit);
+    };
+
+    const Controller = () => {
+        App.Window.Title('Add');
+        App.Window.Toolbar().render('[app-add-tpl-toolbar]', {});
+        App.Window.Content().render('[app-add-tpl]', {});
+        FocusInput();
+    };
+
+    const Submit = () => {
+        let task = App.Window.Content().val();
+        let errors = App.Task.Validate(task);
+        if (errors !== null) {
+            App.Error.Content(errors);
+            FocusInput();
+            return;
+        }
+        App.Task.Add({
+            ...task,
+            id: App.Gen.Id(),
+            status: App.Task.Status.TODO
+        });
+        Exit();
+    }
+
+    const InputKeyDown = (e) => {
+        if (e.combo('Enter')) {
+            e.stopPropagation();
+            e.preventDefault();
+            Submit();
+        }
+        if (e.key === 'Escape') {
+            Exit();
+        }
+    }
+
+    const Exit = () => {
+        App.Router.Navigate(App.Index.Controller);
+    }
+
+    const FocusInput = () => {
+        App.Window.Content().one('[app-add-focus]').focus();
+    }
+
+    return {
+        Boot,
+        Controller,
+        Submit,
+        InputKeyDown,
+    };
+
+})();
+</script>
+<template app-add-tpl>
+    <div
+        val="object"
+        class="px-6 pb-6"
+    >
+        <input
+            app-add-focus
+            onkeydown="App.Add.InputKeyDown(event)"
+            val="input" val-key="content"
+            type="text"
+            class="w-full mt-6 px-2 py-1 rounded-md border border-gray-200 text-black text-sm outline-none"
+        />
+        <div val app-error-content="content" app-error-content-tpl="[app-add-tpl-error]"></div>
+        <button
+            onclick="App.Add.Submit()"
+            class="h-7 w-full mt-4 py-1 px-1 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            Add <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+    </div>
+</template>
+
+<template app-add-tpl-error>
+    <div val="object">
+        <div
+            val="text" val-key="error"
+            class="mt-2 text-red-600 text-sm"
+        >
+        </div>
+    </div>
+</template>
+
+<template app-add-tpl-toolbar>
+    <div class="text-xl ml-2 py-2 rounded-md text-gray-400 font-light">
+        Add
+    </div>
+</template>
+<script>
+App.Boot = (() => {
+
+    const Boot = () => {
+        Modules();
+        Router();
+    }
+
+    const Modules = () => {
+        App.Add.Boot();
+        App.Detail.Boot();
+        App.Edit.Boot();
+        App.Index.Boot();
+        App.List.Boot();
+        App.Keybind.Boot();
+        App.Window.Boot();
+    }
+
+    const Router = () => {
+        App.Router.Boot();
+    }
+
+    return Boot;
+
+})();</script>
+<script>
+App.Detail = (() => {
+
+    let task = null;
+
+    const Boot = () => {
+        App.Router.Register(App.Detail.Controller, '/detail/{id}');
+        App.Keybind.Register(App.Detail.Controller)
+            .Combo('Escape', Exit)
+            .Combo('Enter', MarkToggle)
+            .Combo('e', Edit)
+            .Combo('d', Delete)
+        ;
+    };
+
+    const Controller = (args) => {
+        task = App.Task.FindById(args.id);
+        if (!task) {
+            return App.Error.NotFound();
+        }
+        App.Window.Title(`${task.content.cut(40)}`);
+        App.Window.Toolbar().render('[app-detail-tpl-toolbar]', task);
+        App.Window.Content().render('[app-detail-tpl]', task);
+    };
+
+    const Exit = () => {
+        App.Router.Navigate(App.Index.Controller);
+    }
+
+    const MarkAsDone = () => {
+        task.status = App.Task.Status.DONE;
+        App.Task.Update(task);
+        App.Router.Refresh();
+    }
+
+    const MarkAsTodo = () => {
+        task.status = App.Task.Status.TODO;
+        App.Task.Update(task);
+        App.Router.Refresh();
+    }
+
+    const MarkToggle = () => {
+        task.status = (task.status === App.Task.Status.TODO) ? App.Task.Status.DONE : App.Task.Status.TODO;
+        App.Task.Update(task);
+        App.Router.Refresh();
+    }
+
+    const Edit = () => {
+        App.Router.Navigate(App.Edit.Controller, { id: task.id });
+    }
+
+    const Delete = () => {
+        if (!window.confirm('Are you sure you want to delete this task?')) {
+            return;
+        }
+        App.Task.Delete(task.id);
+        App.Router.Navigate(App.Index.Controller);
+    }
+
+    return {
+        Boot,
+        Controller,
+        Delete,
+        Edit,
+        MarkAsDone,
+        MarkAsTodo,
+    };
+
+})();
+</script>
+<template app-detail-tpl>
+    <div
+        val="object"
+        class="pb-4 pt-2"
+    >
+        <div
+            val
+            val-set="(v) => {
+                this.set(v);
+                if (v.status === 'done') {
+                    this.classList.add('line-through');
+                }
+            }"
+            class="mx-4 mt-2 px-4 py-2 rounded-md bg-gray-100 text-sm"
+        >
+            <span val="text" val-key="content"></span>
+        </div>
+    </div>
+</template>
+
+<template app-detail-tpl-toolbar>
+    <div val="object">
+        <button
+            val="if" val-key="status" val-value="todo"
+            onclick="App.Detail.MarkAsDone()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            &#9744; Todo <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+        <button
+            val="if" val-key="status" val-value="done"
+            onclick="App.Detail.MarkAsTodo()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            &#9745; Done <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+        <button
+            onclick="App.Detail.Edit()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            Edit <span class="text-gray-400 font-extralight">[e]</span>
+        </button>
+        <button
+            onclick="App.Detail.Delete()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            Delete <span class="text-gray-400 font-extralight">[d]</span>
+        </button>
+    </div>
+
+</template>
+<script>
+App.Edit = (() => {
+
+    let task = null;
+
+    const Boot = () => {
+        App.Router.Register(App.Edit.Controller, '/edit/{id}');
+        App.Keybind.Register(App.Edit.Controller).Combo('Escape', Exit);
+    };
+
+    const Controller = (args) => {
+        task = App.Task.FindById(args.id);
+        if (!task) {
+            return App.Error.NotFound();
+        }
+        App.Window.Title(task.content.cut(40));
+        App.Window.Toolbar().render('[app-edit-tpl-toolbar]', task);
+        App.Window.Content().render('[app-edit-tpl]', task);
+        FocusInput();
+    };
+
+    const Exit = () => {
+        App.Router.Navigate(App.Detail.Controller, { id: task.id });
+    }
+
+    const InputKeyDown = (e) => {
+        if (e.combo('Enter')) {
+            e.stopPropagation();
+            e.preventDefault();
+            Submit();
+        }
+        if (e.key === 'Escape') {
+            e.stopPropagation();
+            e.preventDefault();
+            Exit();
+        }
+    }
+
+    const Submit = () => {
+        let val = App.Window.Content().val();
+        let errors = App.Task.Validate(val);
+        if (errors !== null) {
+            App.Error.Content(errors);
+            FocusInput();
+            return;
+        }
+        task.content = val.content.trim();
+        App.Task.Update(task);
+        Exit();
+    }
+
+    const FocusInput = () => {
+        App.Window.Content().one('[app-edit-focus]').focus();
+    }
+
+    return {
+        Boot,
+        Controller,
+        Submit,
+        InputKeyDown,
+    };
+
+})();
+</script>
+<template app-edit-tpl>
+    <div
+        val="object"
+        class="px-6 pb-6"
+    >
+        <input
+            app-edit-focus
+            onkeydown="App.Edit.InputKeyDown(event)"
+            val="input" val-key="content"
+            type="text"
+            rows="6"
+            class="w-full mt-6 px-2 py-2 rounded-md border border-gray-200 text-black text-sm outline-none"
+        />
+        <div val app-error-content="content" app-error-content-tpl="[app-edit-tpl-error]"></div>
+        <button
+            onclick="App.Edit.Submit()"
+            class="h-7 w-full mt-4 py-1 px-1 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            Update <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+    </div>
+</template>
+
+<template app-edit-tpl-error>
+    <div val="object">
+        <div
+            val="text" val-key="error"
+            class="mt-2 text-red-600 text-sm"
+        >
+        </div>
+    </div>
+</template>
+
+<template app-edit-tpl-toolbar>
+    <div class="text-xl ml-2 py-2 rounded-md text-gray-400 font-light">
+        Edit
+    </div>
+</template>
+<script>
+App.Error = (() => {
+
+    const NotFound = () => {
+        App.Window.Title('Not Found');
+        App.Window.Content().render('[app-error-tpl-notfound]', {
+            url: window.location.pathname
+        });
+    };
+
+    const Content = (errors) => {
+        App.Window.Content().all('[app-error-content]').each(el => {
+            const key = el.attr('app-error-content');
+            const tpl = el.attr('app-error-content-tpl');
+            el.render(tpl, errors[key] ? { error: errors[key] } : {});
+        });
+    }
+
+    return {
+        NotFound,
+        Content,
+    };
+
+})();
+</script>
+<template app-error-tpl-notfound>
+    <div
+        val="object"
+        class="pb-4 pt-2 px-4"
+    >
+        <div class="mt-2 text-center text-gray-500 text-sm">
+            404 - Page not found
+        </div>
+        <div class="mt-2 text-center text-gray-500 text-sm">
+            The url <span val="text" val-key="url" class="text-black"></span> was not found
+        </div>
+    </div>
+</template>
+<script>
+App.Gen = (() => {
+
+    const Id = () => {
+        const t = Date.now().toString(16).padStart(12, '0');
+        const r = () => Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0');
+        return `${t.substring(0, 8)}-${t.substring(8, 12)}-7${r().substring(1)}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${r().substring(1)}-${r()}${r()}${r()}`;
+    }
+
+    return {
+        Id,
+    };
+
+})();</script>
+<script>
+App.Index = (() => {
+
+    const Boot = () => {
+        App.Router.Register(App.Index.Controller, '/');
+    };
+
+    const Controller = () => {
+        App.Router.Navigate(App.List.Controller);
+    };
+
+    return {
+        Boot,
+        Controller,
+    };
+
+})();
+</script>
+<script>
+App.Keybind = (() => {
+
+    const binds = new Map();
+
+    const Register = (controller) => {
+        if (!binds.has(controller)) {
+            binds.set(controller, new Map());
+        }
+        const api = {
+            Combo: (combo, callback, strong = false) => {
+                const actions = binds.get(controller);
+                if (!actions.has(combo)) {
+                    actions.set(combo, []);
+                }
+                if (strong) {
+                    actions.get(combo).push((e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        callback(e);
+                    });
+                } else {
+                    actions.get(combo).push(callback);
+                }
+                return api;
+            }
+        };
+        return api;
+    };
+
+    const HandleKeydown = (e) => {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName) || document.activeElement.isContentEditable) {
+            return;
+        }
+        const controller = App.Router.CurrentController();
+        if (!controller || !binds.has(controller)) {
+            return;
+        }
+        const actions = binds.get(controller);
+        if (!actions) {
+            return;
+        }
+        for (const [combo, callbacks] of actions.entries()) {
+            if (e.combo(combo)) {
+                callbacks.forEach(callback => callback(e));
+            }
+        }
+    };
+
+    const Boot = () => {
+        window.addEventListener('keydown', HandleKeydown);
+    };
+
+    return {
+        Register,
+        Boot,
+    };
+
+})();
+</script>
+<script>
+App.List = (() => {
+
+    const Boot = () => {
+        App.Router.Register(App.List.Controller, '/list');
+        App.Keybind.Register(App.List.Controller)
+            .Combo('a', GoToAdd, true)
+            .Combo('s', FocusSeach, true)
+            .Combo('t', GoToTodo)
+            .Combo('ArrowUp', Up, true)
+            .Combo('ArrowDown', Down, true)
+            .Combo('Enter', Enter)
+        ;
+    };
+
+    const Controller = (args) => {
+        const tasks = App.Task.FindAll(null, args.search);
+        App.Window.Title('Todo');
+        App.Window.Toolbar().render('[app-list-tpl-toolbar]', {
+            search: args.search,
+        });
+        App.Window.Content().render('[app-list-tpl]', {
+            tasks: tasks,
+            search: args.search,
+            count: tasks.length,
+            nodata: tasks.length === 0,
+            nodata_standard: tasks.length === 0 && !args.search,
+            nodata_search: tasks.length === 0 && args.search && args.search.length > 0,
+        });
+    };
+
+    const ItemClick = (el) => {
+        App.Router.Navigate(App.Detail.Controller, {id: el.attr('app-list-task-id')});
+    };
+
+    const GoToAdd = () => {
+        App.Router.Navigate(App.Add.Controller);
+    };
+
+    const GoToTodo = () => {
+        App.Router.Navigate(App.List.Controller);
+    }
+
+    const FocusSeach = () => {
+        App.Window.Toolbar().one('[app-list-search]').focus();
+    }
+
+    const SearchKeydown = (n, e) => {
+        if (e.key === 'Escape') {
+            n.blur();
+        }
+        if (e.key === 'Enter') {
+            App.Router.Navigate(App.List.Controller, {search: n.value});
+        }
+    }
+
+    const Enter = () => {
+        const selected = Selected();
+        if (!selected) {
+            return;
+        }
+        App.Router.Navigate(App.Detail.Controller, {id: selected.attr('app-list-task-id')});
+    }
+
+    const Up = () => {
+        NextPrev('prev');
+    }
+
+    const Down = () => {
+        NextPrev('next');
+    }
+
+    const Selected = () => {
+        return App.Window.Content().one('[app-list-task-selected]');
+    }
+
+    const NextPrev = (dir) => {
+        Select(
+            App.Window.Content().all('[app-list-task]'),
+            Selected(),
+            (el) => {
+                el.attr('app-list-task-selected', '');
+                el.style.backgroundColor = '#e5e7eb';
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+            (el) => {
+                el.attr('app-list-task-selected', null);
+                el.style.backgroundColor = '';
+            },
+            dir
+        )
+    }
+
+    const Select = (items, selected, select, unselect, dir) => {
+        if (!items.length) {
+            return;
+        }
+        let index = items.indexOf(selected);
+
+        if (selected) {
+            unselect(selected);
+        } else {
+            if (dir === 'next') {
+                index = -1;
+            } else if (dir === 'prev') {
+                index = items.length;
+            }
+        }
+
+        if (dir === 'next') {
+            if (index < items.length - 1) {
+                index += 1;
+            } else {
+                index = 0;
+            }
+        } else if (dir === 'prev') {
+            if (index > 0) {
+                index -= 1;
+            } else {
+                index = items.length - 1;
+            }
+        }
+
+        const next = items[index];
+        select(next);
+    };
+
+
+    return {
+        Boot,
+        Controller,
+        GoToAdd,
+        ItemClick,
+        SearchKeydown,
+    };
+
+})();
+</script>
+<template app-list-tpl>
+    <div
+        val="object"
+        class="pb-4"
+    >
+        <div
+            val="ifnot" val-key="nodata"
+            class="-mb-4 px-4 pt-0 text-gray-400 text-xs text-right"
+        >
+            [↓], [↑], [↵]
+        </div>
+        <div
+            val="array" val-key="tasks" val-tpl="[app-list-tpl-task]"
+            class="mt-4"
+        ></div>
+
+        <div
+            val="if" val-key="nodata_standard"
+            class="mt-4 mx-4 text-center text-gray-500 text-sm"
+        >
+            No tasks
+
+            <button
+                onclick="App.List.GoToAdd()"
+                class="h-7 ml-2 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-black text-sm font-medium hover:bg-gray-200"
+            >
+                Add <span class="text-gray-400 font-extralight">[a]</span>
+            </button>
+        </div>
+        <div
+            val="if" val-key="nodata_search"
+            class="mt-4 mx-4 text-center text-gray-500 text-sm"
+        >
+            Not found any task
+        </div>
+    </div>
+</template>
+
+<template app-list-tpl-task>
+    <div
+        val="object"
+    >
+        <div
+            app-list-task
+            onclick="App.List.ItemClick(this)"
+            val
+            val-set="(v) => {
+                this.set(v);
+                this.attr('app-list-task-id', v.id);
+                if (v.status === 'done') {
+                    this.classList.add('line-through');
+                }
+            }"
+            class="mx-4 mt-2 px-4 py-2 rounded-md bg-gray-100 cursor-pointer text-sm hover:bg-gray-200"
+        >
+            <span val="text" val-key="content"></span>
+        </div>
+    </div>
+</template>
+
+<template app-list-tpl-toolbar>
+    <div val="object" class="inline-flex">
+        <button
+            onclick="App.List.GoToAdd()"
+            class="h-7 ml-2 my-2 py-1 px-4 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            Add <span class="text-gray-400 font-extralight">[a]</span>
+        </button>
+        <input
+            app-list-search
+            val="input" val-key="search"
+            onkeydown="App.List.SearchKeydown(this, event)"
+            type="text"
+            class="h-7 ml-2 my-2 py-1 px-2 rounded-md border border-gray-200 text-black text-sm font-light placeholder:text-gray-400"
+            placeholder="Search [s] [↵]"
+        />
+    </div>
+</template>
+<script>
+App.Router = (() => {
+    const routes = [];
+    let currentRoute = null;
+    const onBeforeNavigateListeners = [];
+    const onAfterNavigateListeners = [];
+    let basePath = null;
+
+    const Register = (handler, path) => {
+        routes.push({ handler, path, regex: PathToRegex(path) });
+    };
+
+    const PathToRegex = (path) =>
+        new RegExp("^" + path.replace(/\{([a-zA-Z]+)\?\}/g, "([^/]*)").replace(/\{([a-zA-Z]+)\}/g, "([^/]+)") + "$");
+
+    const FindRouteByPath = (path) =>
+        routes.find(route => route.regex.test(path.replace(basePath, "")));
+
+    const ExtractParams = (route, path) => {
+        const cleanPath = path.replace(basePath, "");
+        const values = cleanPath.match(route.regex).slice(1);
+        const keys = Array.from(route.path.matchAll(/\{([a-zA-Z]+)\??\}/g)).map(result => result[1]);
+        const routeParams = Object.fromEntries(keys.map((key, i) => [key, values[i] !== undefined && values[i] !== "" ? values[i] : null]));
+        const queryParams = Object.fromEntries(new URLSearchParams(window.location.search).entries());
+        return { ...queryParams, ...routeParams };
+    };
+
+    const HandleRoute = () => {
+        const path = window.location.pathname.replace(basePath, "");
+        const route = FindRouteByPath(path);
+        if (route) {
+            currentRoute = route;
+            route.handler(ExtractParams(route, path));
+        } else {
+            currentRoute = null;
+            App.Error.NotFound();
+        }
+    };
+
+    const Navigate = (handler, params = {}) => {
+        onBeforeNavigateListeners.each(l => l());
+
+        const route = routes.find(r => r.handler === handler);
+        if (!route) {
+            currentRoute = null;
+            App.Error.NotFound();
+            onAfterNavigateListeners.each(l => l());
+            return;
+        }
+
+        let path = route.path;
+        const pathKeys = Array.from(path.matchAll(/\{([a-zA-Z]+)\??\}/g)).map(match => match[1]);
+        const queryParams = {};
+
+        for (const [key, value] of Object.entries(params)) {
+            if (pathKeys.includes(key)) {
+                path = path.replace(`{${key}}`, value);
+                path = path.replace(`{${key}?}`, value || "");
+            } else {
+                queryParams[key] = value;
+            }
+        }
+
+        const queryString = new URLSearchParams(queryParams).toString();
+        const fullPath = `${basePath}${path}${queryString ? `?${queryString}` : ""}`;
+
+        currentRoute = route;
+        window.history.pushState({}, "", fullPath);
+        HandleRoute();
+        onAfterNavigateListeners.each(l => l());
+    };
+
+    const CurrentController = () => {
+        return currentRoute ? currentRoute.handler : null;
+    };
+
+    const Boot = () => {
+        basePath = window.location.pathname.includes("/dx-spa/") ? "/dx-spa" : "";
+        window.addEventListener("popstate", HandleRoute);
+        onBeforeNavigateListeners.each(l => l());
+        HandleRoute();
+        onAfterNavigateListeners.each(l => l());
+    };
+
+    const OnBeforeNavigate = (listener) => {
+        onBeforeNavigateListeners.push(listener);
+    };
+
+    const OnAfterNavigate = (listener) => {
+        onAfterNavigateListeners.push(listener);
+    };
+
+    const Refresh = () => {
+        HandleRoute();
+    };
+
+    return {
+        Boot,
+        CurrentController,
+        Navigate,
+        OnAfterNavigate,
+        OnBeforeNavigate,
+        Refresh,
+        Register,
+    };
+
+})();
+</script>
+<script>
+const Rv = (() => {
+    const create = (initialValue, callback) => {
+        let value = initialValue;
+        let initialized = callback ? false : true;
+        const subscribers = [];
+
+        const initialize = () => {
+            if (callback && !initialized) {
+                value = callback();
+                initialized = true;
+                subscribers.forEach(subscriber => subscriber(value));
+            }
+        };
+
+        const subscribe = (subscriber) => {
+            initialize();
+            subscribers.push(subscriber);
+            subscriber(value);
+        };
+
+        const set = (newValue) => {
+            initialize();
+            if (value === newValue) {
+                return;
+            }
+            value = newValue;
+            subscribers.forEach(subscriber => subscriber(value));
+        };
+
+        const get = () => {
+            initialize();
+            return value;
+        };
+
+        return {
+            subscribe,
+            set,
+            get,
+        };
+    };
+
+    const val = (initialValue) => create(initialValue);
+
+    const lazy = (callback) => create(undefined, callback);
+
+    return {
+        val,
+        lazy,
+    };
+})();
+</script>
+<script>
+App.Task = (() => {
+
+    const storageKey = 'App.Task';
+
+    const Status = {
+        TODO: 'todo',
+        DONE: 'done',
+        Cases: ['todo', 'done'],
+        Label: {
+            'todo': 'Todo',
+            'done': 'Done',
+        },
+    };
+
+    const Todo = Rv.lazy(() => Count(Status.TODO));
+
+    const load = () => {
+        const rawData = localStorage.getItem(storageKey);
+        return rawData ? JSON.parse(rawData) : [];
+    };
+
+    const save = (tasks) => {
+        localStorage.setItem(storageKey, JSON.stringify(tasks));
+        Todo.set(Count(Status.TODO));
+    };
+
+    const Add = (task) => {
+        const tasks = load();
+        tasks.push(task);
+        save(tasks);
+    };
+
+    const FindById = (id) => {
+        const tasks = load();
+        return tasks.find(task => task.id === id) || null;
+    };
+
+    const FindAll = (status = null, search = null) => {
+        let tasks = load();
+        if (status) {
+            tasks = tasks.filter(task => task.status === status);
+        }
+        if (search) {
+            tasks = tasks.filter(task => task.content.toLowerCase().includes(search.toLowerCase()));
+        }
+        return tasks;
+    };
+
+    const Count = (status = null, search = null) => {
+        return FindAll(status, search).length;
+    };
+
+    const Update = (task) => {
+        const tasks = load();
+        const index = tasks.findIndex(i => i.id === task.id);
+        if (index === -1) {
+            return;
+        }
+        tasks[index] = task;
+        save(tasks);
+    };
+
+    const Validate = (task) => {
+        let errors = {};
+        if (!task.content || task.content.length < 3) {
+            errors.content = 'Content must be at least 3 characters';
+        }
+        return Object.keys(errors).length > 0 ? errors : null;
+    };
+
+    const Delete = (id) => {
+        const tasks = load();
+        const index = tasks.findIndex(i => i.id === id);
+        if (index === -1) {
+            return;
+        }
+        tasks.splice(index, 1);
+        save(tasks);
+    };
+
+    return {
+        Add,
+        Count,
+        Delete,
+        FindAll,
+        FindById,
+        Status,
+        Todo,
+        Update,
+        Validate,
+    };
+})();
+</script>
+<script>
+document.al = function(s) {
+    return Array.from(document.querySelectorAll(s));
+};
+document.one = function(s) {
+    return document.querySelector(s);
+};
+Array.prototype.each = function(f) {
+    return this.forEach(f);
+}
+Array.prototype.any = function() {
+    return this.length > 0;
+};
+Array.prototype.none = function() {
+    return this.length === 0;
+};
+DocumentFragment.prototype.one = function(s) {
+    return this.querySelector(s);
+}
+DocumentFragment.prototype.allfd = function(s) {
+    return Array.from(this.children).reduce((r, e) => {
+        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
+    }, []);
+}
+HTMLElement.prototype.all = function(s) {
+    return Array.from(this.querySelectorAll(s));
+}
+HTMLElement.prototype.allfd = function(s) {
+    return Array.from(this.children).reduce((r, e) => {
+        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
+    }, []);
+}
+HTMLElement.prototype.arr = function(tpl, data) {
+    return val.arr(this, tpl, data);
+}
+HTMLElement.prototype.attr = function(a, v) {
+    if (v === undefined) {
+        return this.getAttribute(a);
+    }
+    else if (v === null) {
+        this.removeAttribute(a);
+        return this;
+    } else {
+        this.setAttribute(a, v);
+        return this;
+    }
+}
+HTMLElement.prototype.clear = function() {
+    this.innerHTML = '';
+    return this;
+}
+HTMLElement.prototype.get = function() {
+    return val.get(this);
+};
+HTMLElement.prototype.hide = function(v = true) {
+    this.style.display = v === true ? 'none' : 'false';
+    return this;
+}
+HTMLElement.prototype.modify = function(f) {
+    val.modify(this, f);
+    return this;
+}
+HTMLElement.prototype.one = function(s) {
+    return this.querySelector(s);
+}
+HTMLElement.prototype.patch = function(data) {
+    val.patch(this, data);
+    return this;
+}
+HTMLElement.prototype.render = function(tpl, data) {
+    val.render(this, tpl, data);
+    return this;
+}
+HTMLElement.prototype.tpl = function() {
+    return this.content.cloneNode(true);
+}
+HTMLElement.prototype.set = function(data) {
+    val.set(this, data);
+    return this;
+};
+HTMLElement.prototype.show = function(v = true) {
+    this.style.display = v === true ? '' : 'none';
+    return this;
+}
+HTMLElement.prototype.up = function(s) {
+    if (s === undefined) {
+        return this.parentNode;
+    }
+    if (this.matches(s)) {
+        return this;
+    }
+    let node = this.closest(s);
+    if (node) {
+        return node;
+    }
+    return document.body;
+}
+HTMLElement.prototype.val = function(data) {
+    if (arguments.length === 0) {
+        return val.get(this);
+    } else {
+        val.set(this, data);
+        return this;
+    }
+};
+KeyboardEvent.prototype.combo = function(combo) {
+    return `${this.altKey ? 'Alt+' : ''}${this.ctrlKey ? 'Ctrl+' : ''}${this.metaKey ? 'Meta+' : ''}${this.shiftKey ? 'Shift+' : ''}${this.key}` === combo;
+};
+String.prototype.cut = function(length) {
+    return this.length > length ? this.substring(0, length) + '...' : this;
+};
+</script>
+<script>
+const val = (function () {
+    function _tpl(tpl) {
+        return typeof tpl === 'string' ? document.one(tpl) : tpl;
+    }
+    function _fx(el, write, v = null) {
+        let fx = el.attr('val');
+        if (fx && fx !== '' && val.fx[fx]) {
+            return write ? val.fx[fx].set(el, v) : val.fx[fx].get(el);
+        }
+    }
+    function _sg(el, write, v = null) {
+        let code = el.attr(write ? 'val-set' : 'val-get');
+        if (code) {
+            return write
+                ? (function () { return eval(code).call(el, v); }).bind(el)()
+                : (function () { return eval(code).call(el); }).bind(el)()
+            ;
+        }
+    }
+    function _get(el) {
+        return {..._fx(el, false) || {}, ..._sg(el, false) || {}};
+    }
+    function _set(el, v) {
+        _fx(el, true, v);
+        _sg(el, true, v);
+    }
+    function _frag(tpl, data) {
+        let frag = tpl.tpl();
+        obj(frag, data);
+        return frag;
+    }
+    function _iter(el, tpl, data, method) {
+        let t = _tpl(tpl);
+        data.each(d => el[method](_frag(t, d)));
+    }
+    function obj(el, data = null) {
+        if (data === null) {
+            let d = el.allfd('[val]').reduce((r, e) => Object.assign(r, (_get(e))), {});
+            return Object.keys(d).length === 0 ? null : d;
+        }
+        el.allfd('[val]').each(e => _set(e, data));
+    }
+    function arr(el, tpl, data) {
+        if (arguments.length === 1) {
+            return el.allfd('[val]').map(_get);
+        }
+        el.innerHTML = '';
+        if (data?.length) {
+            _iter(el, tpl, data, 'appendChild');
+        }
+    }
+    function render(el, tpl, data) {
+        el.innerHTML = '';
+        if (data !== undefined && data !== null) {
+            el.appendChild(_frag(_tpl(tpl), data));
+        }
+    }
+    function get(el) {
+        return obj(el);
+    }
+    function set(el, data) {
+        obj(el, data);
+    }
+    function patch(el, data) {
+        obj(el, Object.assign(obj(el), data));
+    }
+    function append(el, tpl, data) {
+        _iter(el, tpl, data, 'appendChild');
+    }
+    function prepend(el, tpl, data) {
+        _iter(el, tpl, data.reverse(), 'prepend');
+    }
+    function modify(el, callback) {
+        set(el, callback(obj(el)));
+    }
+    return {
+        append, arr, fx: {}, get, modify, obj, patch, prepend, render, set
+    };
+})();
+val.fx.object = {
+    get: (el) => el.attr('val-key') ? { [el.attr('val-key')]: val.obj(el) } : val.obj(el),
+    set: (el, data) => { el.attr('val-key') ? val.set(el, data[el.attr('val-key')]) : val.set(el, data) }
+};
+val.fx.array = {
+    get: (el) => ({ [el.attr('val-key')]: val.arr(el) }),
+    set: (el, data) => val.arr(el, el.attr('val-tpl'), data[el.attr('val-key')])
+};
+val.fx.render = {
+    get: (el) => ({ [el.attr('val-key')]: val.obj(el) }),
+    set: (el, data) => val.render(el, el.attr('val-tpl'), data[el.attr('val-key')])
+};
+val.fx.text = {
+    get: (el) => ({ [el.attr('val-key')]: el.textContent }),
+    set: (el, data) => { el.textContent = data[el.attr('val-key')]; }
+};
+val.fx.html = {
+    get: (el) => ({ [el.attr('val-key')]: el.innerHTML }),
+    set: (el, data) => { el.innerHTML = data[el.attr('val-key')]; }
+};
+val.fx.input = {
+    get: (el) => ({ [el.attr('val-key')]: el.value }),
+    set: (el, data) => { el.value = data[el.attr('val-key')] || ''; }
+};
+val.fx.show = {
+    get: (el) => ({ [el.attr('val-key')]: el.style.display !== 'none' }),
+    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? '' : 'none'; }
+};
+val.fx.hide = {
+    get: (el) => ({ [el.attr('val-key')]: el.style.display === 'none' }),
+    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? 'none' : ''; }
+};
+val.fx.img = {
+    get: (el) => ({ [el.attr('val-key')]: el.src }),
+    set: (el, data) => { el.src = data[el.attr('val-key')]; }
+};
+val.fx.attr = {
+    get: (el) => ({ [el.attr('val-key')]: el.attr(el.attr('val-attr')) }),
+    set: (el, data) => { el.attr(el.attr('val-attr'), data[el.attr('val-key')]); }
+}
+val.fx.checkbox = {
+    get: (el) => ({ [el.attr('val-key')]: el.checked ? el.attr('val-check') : el.attr('val-uncheck') }),
+    set: (el, data) => { el.checked = data[el.attr('val-key')] === el.attr('val-check'); }
+};
+val.fx.if = {
+    get: (el) => {
+        return el.style.display !== 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? '' : 'none') : (data[el.attr('val-key')] ? '' : 'none');
+    }
+};
+val.fx.ifnot = {
+    get: (el) => {
+        return el.style.display === 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? 'none' : '') : (data[el.attr('val-key')] ? 'none' : '');
+    }
+};
+</script>
+<script>
+App.Window = (() => {
+
+    const Boot = () => {
+        App.Router.OnBeforeNavigate(() => Toolbar().clear());
+        App.Router.OnAfterNavigate(() => Topbar().patch({ index: [App.List.Controller, null].includes(App.Router.CurrentController())}));
+        App.Task.Todo.subscribe((todo) => Topbar().patch({ todo }));
+    };
+
+    const Title = (title) => document.title = title;
+
+    const Content = () => document.one('[app-window-content]');
+
+    const Topbar = () => document.one('[app-window-topbar]');
+
+    const Toolbar = () => document.one('[app-window-toolbar]');
+
+    const GoToTodo = () => App.Router.Navigate(App.List.Controller);
+
+    return {
+        Boot,
+        Content,
+        GoToTodo,
+        Toolbar,
+        Title,
+    };
+
+})();
+</script>
+<div app-window class="my-10 mx-auto w-[600px] border-1 border border-gray-200 rounded-md">
+
+    <div app-window-topbar class="flex border-b border-gray-200 py-1">
+
+        <div class="inline-flex flex-shrink-0 ml-1">
+            <div onclick="App.Window.GoToTodo()" class="text-xl py-2 px-4 rounded-md font-medium cursor-pointer hover:bg-gray-200">
+                TODO
+                <span class="inline-block text-gray-400 font-light">
+                    <span val="text" val-key="todo"></span>
+                </span>
+                <span val="ifnot" val-key="index" class="inline-block text-gray-400 font-light">
+                    [Esc]
+                </span>
+            </div>
+            <div class="w-px ml-1 mr-2 h-full bg-gray-200"></div>
+        </div>
+
+        <div app-window-toolbar class="flex-shrink-0 mr-1"></div>
+
+    </div>
+
+    <div app-window-content></div>
+
+</div>
+
+<script>
+    App.Boot();
+</script>
+
+</body>
+
+

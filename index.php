@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DX SPA</title>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-    <?php include 'src/shared/index.php' ?>
-    <?php include 'src/blog/index.php' ?>
-    <div app></div>
-    <script>
-        app.shared.bootstrap();
-    </script>
+
+<script>
+    const App = {};
+</script>
+
+<?php array_map(fn($f) => require $f, glob(__DIR__ . '/src/*/_export.php')); ?>
+
+<script>
+    App.Boot();
+</script>
+
 </body>
 
 

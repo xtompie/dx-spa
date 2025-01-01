@@ -1,5 +1,4 @@
-<script>
-var val = (function (val) {
+const val = (function () {
     function _tpl(tpl) {
         return typeof tpl === 'string' ? document.one(tpl) : tpl;
     }
@@ -36,7 +35,7 @@ var val = (function (val) {
     }
     function obj(el, data = null) {
         if (data === null) {
-            let d = el.allfd('[val]').reduce((r, e) => r.merge(_get(e)), {});
+            let d = el.allfd('[val]').reduce((r, e) => Object.assign(r, (_get(e))), {});
             return Object.keys(d).length === 0 ? null : d;
         }
         el.allfd('[val]').each(e => _set(e, data));
@@ -63,7 +62,7 @@ var val = (function (val) {
         obj(el, data);
     }
     function patch(el, data) {
-        obj(el, obj(el).merge(data));
+        obj(el, Object.assign(obj(el), data));
     }
     function append(el, tpl, data) {
         _iter(el, tpl, data, 'appendChild');
@@ -74,7 +73,7 @@ var val = (function (val) {
     function modify(el, callback) {
         set(el, callback(obj(el)));
     }
-    val.fx = val.fx || {};
-    return val.merge({ append, arr, get, modify, obj, patch, prepend, render, set});
-})(val || {});
-</script>
+    return {
+        append, arr, fx: {}, get, modify, obj, patch, prepend, render, set
+    };
+})();

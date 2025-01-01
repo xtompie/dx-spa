@@ -1,0 +1,78 @@
+<template app-list-tpl>
+    <div
+        val="object"
+        class="pb-4"
+    >
+        <div
+            val="ifnot" val-key="nodata"
+            class="-mb-4 px-4 pt-0 text-gray-400 text-xs text-right"
+        >
+            [↓], [↑], [↵]
+        </div>
+        <div
+            val="array" val-key="tasks" val-tpl="[app-list-tpl-task]"
+            class="mt-4"
+        ></div>
+
+        <div
+            val="if" val-key="nodata_standard"
+            class="mt-4 mx-4 text-center text-gray-500 text-sm"
+        >
+            No tasks
+
+            <button
+                onclick="App.List.GoToAdd()"
+                class="h-7 ml-2 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-black text-sm font-medium hover:bg-gray-200"
+            >
+                Add <span class="text-gray-400 font-extralight">[a]</span>
+            </button>
+        </div>
+        <div
+            val="if" val-key="nodata_search"
+            class="mt-4 mx-4 text-center text-gray-500 text-sm"
+        >
+            Not found any task
+        </div>
+    </div>
+</template>
+
+<template app-list-tpl-task>
+    <div
+        val="object"
+    >
+        <div
+            app-list-task
+            onclick="App.List.ItemClick(this)"
+            val
+            val-set="(v) => {
+                this.set(v);
+                this.attr('app-list-task-id', v.id);
+                if (v.status === 'done') {
+                    this.classList.add('line-through');
+                }
+            }"
+            class="mx-4 mt-2 px-4 py-2 rounded-md bg-gray-100 cursor-pointer text-sm hover:bg-gray-200"
+        >
+            <span val="text" val-key="content"></span>
+        </div>
+    </div>
+</template>
+
+<template app-list-tpl-toolbar>
+    <div val="object" class="inline-flex">
+        <button
+            onclick="App.List.GoToAdd()"
+            class="h-7 ml-2 my-2 py-1 px-4 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            Add <span class="text-gray-400 font-extralight">[a]</span>
+        </button>
+        <input
+            app-list-search
+            val="input" val-key="search"
+            onkeydown="App.List.SearchKeydown(this, event)"
+            type="text"
+            class="h-7 ml-2 my-2 py-1 px-2 rounded-md border border-gray-200 text-black text-sm font-light placeholder:text-gray-400"
+            placeholder="Search [s] [↵]"
+        />
+    </div>
+</template>

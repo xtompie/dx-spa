@@ -1,0 +1,51 @@
+<template app-detail-tpl>
+    <div
+        val="object"
+        class="pb-4 pt-2"
+    >
+        <div
+            val
+            val-set="(v) => {
+                this.set(v);
+                if (v.status === 'done') {
+                    this.classList.add('line-through');
+                }
+            }"
+            class="mx-4 mt-2 px-4 py-2 rounded-md bg-gray-100 text-sm"
+        >
+            <span val="text" val-key="content"></span>
+        </div>
+    </div>
+</template>
+
+<template app-detail-tpl-toolbar>
+    <div val="object">
+        <button
+            val="if" val-key="status" val-value="todo"
+            onclick="App.Detail.MarkAsDone()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            &#9744; Todo <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+        <button
+            val="if" val-key="status" val-value="done"
+            onclick="App.Detail.MarkAsTodo()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            &#9745; Done <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+        <button
+            onclick="App.Detail.Edit()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            Edit <span class="text-gray-400 font-extralight">[e]</span>
+        </button>
+        <button
+            onclick="App.Detail.Delete()"
+            class="h-7 my-2 py-1 px-4 rounded-md cursor-pointer bg-gray-100 text-sm font-medium hover:bg-gray-200"
+        >
+            Delete <span class="text-gray-400 font-extralight">[d]</span>
+        </button>
+    </div>
+
+</template>

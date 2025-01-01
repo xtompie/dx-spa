@@ -1,17 +1,6 @@
-<script>
-var val = val || {};
-val.fx = val.fx || {};
 val.fx.object = {
-    get: (el) => el.attr('val-key')
-        ? { [el.attr('val-key')]: val.obj(el) }
-        : val.obj(el),
-    set: (el, data) => {
-        if (el.attr('val-key')) {
-            val.set(el, data[el.attr('val-key')]);
-        } else {
-            val.set(el, data);
-        }
-    }
+    get: (el) => el.attr('val-key') ? { [el.attr('val-key')]: val.obj(el) } : val.obj(el),
+    set: (el, data) => { el.attr('val-key') ? val.set(el, data[el.attr('val-key')]) : val.set(el, data) }
 };
 val.fx.array = {
     get: (el) => ({ [el.attr('val-key')]: val.arr(el) }),
@@ -31,7 +20,7 @@ val.fx.html = {
 };
 val.fx.input = {
     get: (el) => ({ [el.attr('val-key')]: el.value }),
-    set: (el, data) => { el.value = data[el.attr('val-key')]; }
+    set: (el, data) => { el.value = data[el.attr('val-key')] || ''; }
 };
 val.fx.show = {
     get: (el) => ({ [el.attr('val-key')]: el.style.display !== 'none' }),
@@ -54,7 +43,18 @@ val.fx.checkbox = {
     set: (el, data) => { el.checked = data[el.attr('val-key')] === el.attr('val-check'); }
 };
 val.fx.if = {
-    get: (el) => el.style.display !== 'none' ? { [el.attr('val-key')]: el.attr('val-value') } : {},
-    set: (el, data) => { el.style.display = el.attr('val-value') === data[el.attr('val-key')] ? '' : 'none'; }
+    get: (el) => {
+        return el.style.display !== 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? '' : 'none') : (data[el.attr('val-key')] ? '' : 'none');
+    }
 };
-</script>
+val.fx.ifnot = {
+    get: (el) => {
+        return el.style.display === 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? 'none' : '') : (data[el.attr('val-key')] ? 'none' : '');
+    }
+};

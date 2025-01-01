@@ -1,0 +1,38 @@
+<template app-edit-tpl>
+    <div
+        val="object"
+        class="px-6 pb-6"
+    >
+        <input
+            app-edit-focus
+            onkeydown="App.Edit.InputKeyDown(event)"
+            val="input" val-key="content"
+            type="text"
+            rows="6"
+            class="w-full mt-6 px-2 py-2 rounded-md border border-gray-200 text-black text-sm outline-none"
+        />
+        <div val app-error-content="content" app-error-content-tpl="[app-edit-tpl-error]"></div>
+        <button
+            onclick="App.Edit.Submit()"
+            class="h-7 w-full mt-4 py-1 px-1 rounded-md cursor-pointer bg-black text-white text-sm font-medium hover:bg-gray-800"
+        >
+            Update <span class="text-gray-400 font-extralight">[↵]</span>
+        </button>
+    </div>
+</template>
+
+<template app-edit-tpl-error>
+    <div val="object">
+        <div
+            val="text" val-key="error"
+            class="mt-2 text-red-600 text-sm"
+        >
+        </div>
+    </div>
+</template>
+
+<template app-edit-tpl-toolbar>
+    <div class="text-xl ml-2 py-2 rounded-md text-gray-400 font-light">
+        Edit
+    </div>
+</template>
