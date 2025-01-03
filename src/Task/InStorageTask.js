@@ -12,8 +12,6 @@ App.Task = (() => {
         },
     };
 
-    const Todo = Rv.lazy(() => Count(Status.TODO));
-
     const load = () => {
         const rawData = localStorage.getItem(storageKey);
         return rawData ? JSON.parse(rawData) : [];
@@ -22,6 +20,7 @@ App.Task = (() => {
     const save = (tasks) => {
         localStorage.setItem(storageKey, JSON.stringify(tasks));
         Todo.set(Count(Status.TODO));
+        All(() => Count());
     };
 
     const Add = (task) => {
@@ -78,8 +77,13 @@ App.Task = (() => {
         save(tasks);
     };
 
+    const Todo = Rv.lazy(() => Count(Status.TODO));
+
+    const All = R(() => Count());
+
     return {
         Add,
+        All,
         Count,
         Delete,
         FindAll,

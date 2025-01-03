@@ -4,6 +4,7 @@ App.Window = (() => {
         App.Router.OnBeforeNavigate(() => Toolbar().clear());
         App.Router.OnAfterNavigate(() => Topbar().patch({ index: [App.List.Controller, null].includes(App.Router.CurrentController())}));
         App.Task.Todo.subscribe((todo) => Topbar().patch({ todo }));
+        R(() => Topbar().patch({ all: App.Task.All() }));
     };
 
     const Title = (title) => document.title = title;

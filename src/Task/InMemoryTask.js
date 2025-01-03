@@ -12,8 +12,6 @@ App.Task = (() => {
         },
     };
 
-    const Todo = Rv.lazy(() => Count(Status.TODO));
-
     const load = () => {
         return [...inMemoryStorage];
     };
@@ -21,6 +19,7 @@ App.Task = (() => {
     const save = (tasks) => {
         inMemoryStorage = [...tasks];
         Todo.set(Count(Status.TODO));
+        All(() => Count());
     };
 
     const Add = (task) => {
@@ -77,8 +76,13 @@ App.Task = (() => {
         save(tasks);
     };
 
+    const Todo = Rv.lazy(() => Count(Status.TODO));
+
+    const All = R(() => Count());
+
     return {
         Add,
+        All,
         Count,
         Delete,
         FindAll,

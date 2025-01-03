@@ -1,17 +1,430 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title></title>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-
+<script> const App = {}; </script>
 <script>
-    const App = {};
-</script>
+App.Gen = (() => {
 
+    const Id = () => {
+        const t = Date.now().toString(16).padStart(12, '0');
+        const r = () => Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0');
+        return `${t.substring(0, 8)}-${t.substring(8, 12)}-7${r().substring(1)}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${r().substring(1)}-${r()}${r()}${r()}`;
+    }
+
+    return {
+        Id,
+    };
+
+})();</script>
+<script>
+const Rensen = module = (() => {
+    class Rensen {
+        static watchers = new Map();
+        static inputs = new Map();
+        static stack = [];
+        static instances = new Map();
+        static nextId = 1;
+        constructor(compute) {
+            this.id = Rensen.nextId++;
+            Rensen.instances.set(this.id, this);
+            this.compute = compute;
+            this.value = undefined;
+            this.recompute();
+        }
+        get() {
+            if (Rensen.stack.length > 0) {
+                const current = Rensen.stack[Rensen.stack.length - 1];
+                if (!Rensen.watchers.has(this.id)) {
+                    Rensen.watchers.set(this.id, []);
+                }
+                Rensen.watchers.get(this.id).push(current.id);
+                if (!Rensen.inputs.has(current.id)) {
+                    Rensen.inputs.set(current.id, []);
+                }
+                Rensen.inputs.get(current.id).push(this.id);
+            }
+            return this.value;
+        }
+        set(newCompute) {
+            this.compute = newCompute;
+            this.recompute();
+        }
+        clearDependencies() {
+            if (Rensen.inputs.has(this.id)) {
+                const inputIds = Rensen.inputs.get(this.id);
+                inputIds.forEach((inputId) => {
+                    if (Rensen.watchers.has(inputId)) {
+                        const watchersForInput = Rensen.watchers.get(inputId);
+                        Rensen.watchers.set(
+                            inputId,
+                            watchersForInput.filter((watcherId) => watcherId !== this.id)
+                        );
+                    }
+                });
+                Rensen.inputs.delete(this.id);
+            }
+        }
+        recompute() {
+            this.clearDependencies();
+            Rensen.stack.push(this);
+
+            const newValue = this.compute ? this.compute() : undefined;
+            if (newValue !== this.value) {
+                this.value = newValue;
+                this.notifyWatchers();
+            }
+
+            Rensen.stack.pop();
+        }
+        notifyWatchers() {
+            if (Rensen.watchers.has(this.id)) {
+                const watchersList = Rensen.watchers.get(this.id);
+                watchersList.forEach((watcherId) => {
+                    const watcherObj = Rensen.instances.get(watcherId);
+                    if (watcherObj) {
+                        watcherObj.recompute();
+                    }
+                });
+            }
+        }
+        static R(compute) {
+            const core = new Rensen(compute);
+
+            function reactive(...args) {
+                if (args.length > 0) {
+
+                    core.set(args[0]);
+                } else {
+
+                    return core.get();
+                }
+            }
+            reactive.__core = core;
+            return reactive;
+        }
+
+        static destroy(reactive) {
+            if (!reactive.__core) return;
+            const core = reactive.__core;
+            Rensen.watchers.delete(core.id);
+            Rensen.inputs.delete(core.id);
+            Rensen.instances.delete(core.id);
+            core.compute = null;
+            core.value = null;
+        }
+    }
+    return Rensen;
+})();
+const R = (c) => Rensen.R(c);</script><script>
+const Rv = (() => {
+
+    const create = (initialValue, callback) => {
+        let value = initialValue;
+        let initialized = callback ? false : true;
+        const subscribers = [];
+
+        const initialize = () => {
+            if (callback && !initialized) {
+                value = callback();
+                initialized = true;
+                subscribers.forEach(subscriber => subscriber(value));
+            }
+        };
+
+        const subscribe = (subscriber) => {
+            initialize();
+            subscribers.push(subscriber);
+            subscriber(value);
+        };
+
+        const set = (newValue) => {
+            initialize();
+            if (value === newValue) {
+                return;
+            }
+            value = newValue;
+            subscribers.forEach(subscriber => subscriber(value));
+        };
+
+        const get = () => {
+            initialize();
+            return value;
+        };
+
+        return {
+            subscribe,
+            set,
+            get,
+        };
+    };
+
+    const lazy = (callback) => create(undefined, callback);
+
+    const val = (initialValue) => create(initialValue);
+
+    return {
+        lazy,
+        val,
+    };
+})();
+</script>
+<script>
+document.al = function(s) {
+    return Array.from(document.querySelectorAll(s));
+};
+document.one = function(s) {
+    return document.querySelector(s);
+};
+Array.prototype.each = function(f) {
+    return this.forEach(f);
+}
+Array.prototype.any = function() {
+    return this.length > 0;
+};
+Array.prototype.none = function() {
+    return this.length === 0;
+};
+DocumentFragment.prototype.one = function(s) {
+    return this.querySelector(s);
+}
+DocumentFragment.prototype.allfd = function(s) {
+    return Array.from(this.children).reduce((r, e) => {
+        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
+    }, []);
+}
+HTMLElement.prototype.all = function(s) {
+    return Array.from(this.querySelectorAll(s));
+}
+HTMLElement.prototype.allfd = function(s) {
+    return Array.from(this.children).reduce((r, e) => {
+        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
+    }, []);
+}
+HTMLElement.prototype.arr = function(tpl, data) {
+    return val.arr(this, tpl, data);
+}
+HTMLElement.prototype.attr = function(a, v) {
+    if (v === undefined) {
+        return this.getAttribute(a);
+    }
+    else if (v === null) {
+        this.removeAttribute(a);
+        return this;
+    } else {
+        this.setAttribute(a, v);
+        return this;
+    }
+}
+HTMLElement.prototype.clear = function() {
+    this.innerHTML = '';
+    return this;
+}
+HTMLElement.prototype.get = function() {
+    return val.get(this);
+};
+HTMLElement.prototype.hide = function(v = true) {
+    this.style.display = v === true ? 'none' : 'false';
+    return this;
+}
+HTMLElement.prototype.modify = function(f) {
+    val.modify(this, f);
+    return this;
+}
+HTMLElement.prototype.one = function(s) {
+    return this.querySelector(s);
+}
+HTMLElement.prototype.patch = function(data) {
+    val.patch(this, data);
+    return this;
+}
+HTMLElement.prototype.render = function(tpl, data) {
+    val.render(this, tpl, data);
+    return this;
+}
+HTMLElement.prototype.tpl = function() {
+    return this.content.cloneNode(true);
+}
+HTMLElement.prototype.set = function(data) {
+    val.set(this, data);
+    return this;
+};
+HTMLElement.prototype.show = function(v = true) {
+    this.style.display = v === true ? '' : 'none';
+    return this;
+}
+HTMLElement.prototype.up = function(s) {
+    if (s === undefined) {
+        return this.parentNode;
+    }
+    if (this.matches(s)) {
+        return this;
+    }
+    let node = this.closest(s);
+    if (node) {
+        return node;
+    }
+    return document.body;
+}
+HTMLElement.prototype.val = function(data) {
+    if (arguments.length === 0) {
+        return val.get(this);
+    } else {
+        val.set(this, data);
+        return this;
+    }
+};
+KeyboardEvent.prototype.combo = function(combo) {
+    return `${this.altKey ? 'Alt+' : ''}${this.ctrlKey ? 'Ctrl+' : ''}${this.metaKey ? 'Meta+' : ''}${this.shiftKey ? 'Shift+' : ''}${this.key}` === combo;
+};
+String.prototype.cut = function(length) {
+    return this.length > length ? this.substring(0, length) + '...' : this;
+};
+</script>
+<script>
+const val = (function () {
+    function _tpl(tpl) {
+        return typeof tpl === 'string' ? document.one(tpl) : tpl;
+    }
+    function _fx(el, write, v = null) {
+        let fx = el.attr('val');
+        if (fx && fx !== '' && val.fx[fx]) {
+            return write ? val.fx[fx].set(el, v) : val.fx[fx].get(el);
+        }
+    }
+    function _sg(el, write, v = null) {
+        let code = el.attr(write ? 'val-set' : 'val-get');
+        if (code) {
+            return write
+                ? (function () { return eval(code).call(el, v); }).bind(el)()
+                : (function () { return eval(code).call(el); }).bind(el)()
+            ;
+        }
+    }
+    function _get(el) {
+        return {..._fx(el, false) || {}, ..._sg(el, false) || {}};
+    }
+    function _set(el, v) {
+        _fx(el, true, v);
+        _sg(el, true, v);
+    }
+    function _frag(tpl, data) {
+        let frag = tpl.tpl();
+        obj(frag, data);
+        return frag;
+    }
+    function _iter(el, tpl, data, method) {
+        let t = _tpl(tpl);
+        data.each(d => el[method](_frag(t, d)));
+    }
+    function obj(el, data = null) {
+        if (data === null) {
+            let d = el.allfd('[val]').reduce((r, e) => Object.assign(r, (_get(e))), {});
+            return Object.keys(d).length === 0 ? null : d;
+        }
+        el.allfd('[val]').each(e => _set(e, data));
+    }
+    function arr(el, tpl, data) {
+        if (arguments.length === 1) {
+            return el.allfd('[val]').map(_get);
+        }
+        el.innerHTML = '';
+        if (data?.length) {
+            _iter(el, tpl, data, 'appendChild');
+        }
+    }
+    function render(el, tpl, data) {
+        el.innerHTML = '';
+        if (data !== undefined && data !== null) {
+            el.appendChild(_frag(_tpl(tpl), data));
+        }
+    }
+    function get(el) {
+        return obj(el);
+    }
+    function set(el, data) {
+        obj(el, data);
+    }
+    function patch(el, data) {
+        obj(el, Object.assign(obj(el), data));
+    }
+    function append(el, tpl, data) {
+        _iter(el, tpl, data, 'appendChild');
+    }
+    function prepend(el, tpl, data) {
+        _iter(el, tpl, data.reverse(), 'prepend');
+    }
+    function modify(el, callback) {
+        set(el, callback(obj(el)));
+    }
+    return {
+        append, arr, fx: {}, get, modify, obj, patch, prepend, render, set
+    };
+})();
+val.fx.object = {
+    get: (el) => el.attr('val-key') ? { [el.attr('val-key')]: val.obj(el) } : val.obj(el),
+    set: (el, data) => { el.attr('val-key') ? val.set(el, data[el.attr('val-key')]) : val.set(el, data) }
+};
+val.fx.array = {
+    get: (el) => ({ [el.attr('val-key')]: val.arr(el) }),
+    set: (el, data) => val.arr(el, el.attr('val-tpl'), data[el.attr('val-key')])
+};
+val.fx.render = {
+    get: (el) => ({ [el.attr('val-key')]: val.obj(el) }),
+    set: (el, data) => val.render(el, el.attr('val-tpl'), data[el.attr('val-key')])
+};
+val.fx.text = {
+    get: (el) => ({ [el.attr('val-key')]: el.textContent }),
+    set: (el, data) => { el.textContent = data[el.attr('val-key')]; }
+};
+val.fx.html = {
+    get: (el) => ({ [el.attr('val-key')]: el.innerHTML }),
+    set: (el, data) => { el.innerHTML = data[el.attr('val-key')]; }
+};
+val.fx.input = {
+    get: (el) => ({ [el.attr('val-key')]: el.value }),
+    set: (el, data) => { el.value = data[el.attr('val-key')] || ''; }
+};
+val.fx.show = {
+    get: (el) => ({ [el.attr('val-key')]: el.style.display !== 'none' }),
+    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? '' : 'none'; }
+};
+val.fx.hide = {
+    get: (el) => ({ [el.attr('val-key')]: el.style.display === 'none' }),
+    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? 'none' : ''; }
+};
+val.fx.img = {
+    get: (el) => ({ [el.attr('val-key')]: el.src }),
+    set: (el, data) => { el.src = data[el.attr('val-key')]; }
+};
+val.fx.attr = {
+    get: (el) => ({ [el.attr('val-key')]: el.attr(el.attr('val-attr')) }),
+    set: (el, data) => { el.attr(el.attr('val-attr'), data[el.attr('val-key')]); }
+}
+val.fx.checkbox = {
+    get: (el) => ({ [el.attr('val-key')]: el.checked ? el.attr('val-check') : el.attr('val-uncheck') }),
+    set: (el, data) => { el.checked = data[el.attr('val-key')] === el.attr('val-check'); }
+};
+val.fx.if = {
+    get: (el) => {
+        return el.style.display !== 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? '' : 'none') : (data[el.attr('val-key')] ? '' : 'none');
+    }
+};
+val.fx.ifnot = {
+    get: (el) => {
+        return el.style.display === 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
+    },
+    set: (el, data) => {
+        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? 'none' : '') : (data[el.attr('val-key')] ? 'none' : '');
+    }
+};
+</script>
 <script>
 App.Add = (() => {
 
@@ -383,20 +796,6 @@ App.Error = (() => {
         </div>
     </div>
 </template>
-<script>
-App.Gen = (() => {
-
-    const Id = () => {
-        const t = Date.now().toString(16).padStart(12, '0');
-        const r = () => Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0');
-        return `${t.substring(0, 8)}-${t.substring(8, 12)}-7${r().substring(1)}-${(8 + Math.floor(Math.random() * 4)).toString(16)}${r().substring(1)}-${r()}${r()}${r()}`;
-    }
-
-    return {
-        Id,
-    };
-
-})();</script>
 <script>
 App.Index = (() => {
 
@@ -784,59 +1183,6 @@ App.Router = (() => {
 })();
 </script>
 <script>
-const Rv = (() => {
-
-    const create = (initialValue, callback) => {
-        let value = initialValue;
-        let initialized = callback ? false : true;
-        const subscribers = [];
-
-        const initialize = () => {
-            if (callback && !initialized) {
-                value = callback();
-                initialized = true;
-                subscribers.forEach(subscriber => subscriber(value));
-            }
-        };
-
-        const subscribe = (subscriber) => {
-            initialize();
-            subscribers.push(subscriber);
-            subscriber(value);
-        };
-
-        const set = (newValue) => {
-            initialize();
-            if (value === newValue) {
-                return;
-            }
-            value = newValue;
-            subscribers.forEach(subscriber => subscriber(value));
-        };
-
-        const get = () => {
-            initialize();
-            return value;
-        };
-
-        return {
-            subscribe,
-            set,
-            get,
-        };
-    };
-
-    const lazy = (callback) => create(undefined, callback);
-
-    const val = (initialValue) => create(initialValue);
-
-    return {
-        lazy,
-        val,
-    };
-})();
-</script>
-<script>
 App.Task = (() => {
 
     const storageKey = 'App.Task';
@@ -851,8 +1197,6 @@ App.Task = (() => {
         },
     };
 
-    const Todo = Rv.lazy(() => Count(Status.TODO));
-
     const load = () => {
         const rawData = localStorage.getItem(storageKey);
         return rawData ? JSON.parse(rawData) : [];
@@ -861,6 +1205,7 @@ App.Task = (() => {
     const save = (tasks) => {
         localStorage.setItem(storageKey, JSON.stringify(tasks));
         Todo.set(Count(Status.TODO));
+        All(() => Count());
     };
 
     const Add = (task) => {
@@ -917,8 +1262,13 @@ App.Task = (() => {
         save(tasks);
     };
 
+    const Todo = Rv.lazy(() => Count(Status.TODO));
+
+    const All = R(() => Count());
+
     return {
         Add,
+        All,
         Count,
         Delete,
         FindAll,
@@ -931,265 +1281,13 @@ App.Task = (() => {
 })();
 </script>
 <script>
-document.al = function(s) {
-    return Array.from(document.querySelectorAll(s));
-};
-document.one = function(s) {
-    return document.querySelector(s);
-};
-Array.prototype.each = function(f) {
-    return this.forEach(f);
-}
-Array.prototype.any = function() {
-    return this.length > 0;
-};
-Array.prototype.none = function() {
-    return this.length === 0;
-};
-DocumentFragment.prototype.one = function(s) {
-    return this.querySelector(s);
-}
-DocumentFragment.prototype.allfd = function(s) {
-    return Array.from(this.children).reduce((r, e) => {
-        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
-    }, []);
-}
-HTMLElement.prototype.all = function(s) {
-    return Array.from(this.querySelectorAll(s));
-}
-HTMLElement.prototype.allfd = function(s) {
-    return Array.from(this.children).reduce((r, e) => {
-        return e.matches(s) ? r.concat(e) : r.concat(e.allfd(s));
-    }, []);
-}
-HTMLElement.prototype.arr = function(tpl, data) {
-    return val.arr(this, tpl, data);
-}
-HTMLElement.prototype.attr = function(a, v) {
-    if (v === undefined) {
-        return this.getAttribute(a);
-    }
-    else if (v === null) {
-        this.removeAttribute(a);
-        return this;
-    } else {
-        this.setAttribute(a, v);
-        return this;
-    }
-}
-HTMLElement.prototype.clear = function() {
-    this.innerHTML = '';
-    return this;
-}
-HTMLElement.prototype.get = function() {
-    return val.get(this);
-};
-HTMLElement.prototype.hide = function(v = true) {
-    this.style.display = v === true ? 'none' : 'false';
-    return this;
-}
-HTMLElement.prototype.modify = function(f) {
-    val.modify(this, f);
-    return this;
-}
-HTMLElement.prototype.one = function(s) {
-    return this.querySelector(s);
-}
-HTMLElement.prototype.patch = function(data) {
-    val.patch(this, data);
-    return this;
-}
-HTMLElement.prototype.render = function(tpl, data) {
-    val.render(this, tpl, data);
-    return this;
-}
-HTMLElement.prototype.tpl = function() {
-    return this.content.cloneNode(true);
-}
-HTMLElement.prototype.set = function(data) {
-    val.set(this, data);
-    return this;
-};
-HTMLElement.prototype.show = function(v = true) {
-    this.style.display = v === true ? '' : 'none';
-    return this;
-}
-HTMLElement.prototype.up = function(s) {
-    if (s === undefined) {
-        return this.parentNode;
-    }
-    if (this.matches(s)) {
-        return this;
-    }
-    let node = this.closest(s);
-    if (node) {
-        return node;
-    }
-    return document.body;
-}
-HTMLElement.prototype.val = function(data) {
-    if (arguments.length === 0) {
-        return val.get(this);
-    } else {
-        val.set(this, data);
-        return this;
-    }
-};
-KeyboardEvent.prototype.combo = function(combo) {
-    return `${this.altKey ? 'Alt+' : ''}${this.ctrlKey ? 'Ctrl+' : ''}${this.metaKey ? 'Meta+' : ''}${this.shiftKey ? 'Shift+' : ''}${this.key}` === combo;
-};
-String.prototype.cut = function(length) {
-    return this.length > length ? this.substring(0, length) + '...' : this;
-};
-</script>
-<script>
-const val = (function () {
-    function _tpl(tpl) {
-        return typeof tpl === 'string' ? document.one(tpl) : tpl;
-    }
-    function _fx(el, write, v = null) {
-        let fx = el.attr('val');
-        if (fx && fx !== '' && val.fx[fx]) {
-            return write ? val.fx[fx].set(el, v) : val.fx[fx].get(el);
-        }
-    }
-    function _sg(el, write, v = null) {
-        let code = el.attr(write ? 'val-set' : 'val-get');
-        if (code) {
-            return write
-                ? (function () { return eval(code).call(el, v); }).bind(el)()
-                : (function () { return eval(code).call(el); }).bind(el)()
-            ;
-        }
-    }
-    function _get(el) {
-        return {..._fx(el, false) || {}, ..._sg(el, false) || {}};
-    }
-    function _set(el, v) {
-        _fx(el, true, v);
-        _sg(el, true, v);
-    }
-    function _frag(tpl, data) {
-        let frag = tpl.tpl();
-        obj(frag, data);
-        return frag;
-    }
-    function _iter(el, tpl, data, method) {
-        let t = _tpl(tpl);
-        data.each(d => el[method](_frag(t, d)));
-    }
-    function obj(el, data = null) {
-        if (data === null) {
-            let d = el.allfd('[val]').reduce((r, e) => Object.assign(r, (_get(e))), {});
-            return Object.keys(d).length === 0 ? null : d;
-        }
-        el.allfd('[val]').each(e => _set(e, data));
-    }
-    function arr(el, tpl, data) {
-        if (arguments.length === 1) {
-            return el.allfd('[val]').map(_get);
-        }
-        el.innerHTML = '';
-        if (data?.length) {
-            _iter(el, tpl, data, 'appendChild');
-        }
-    }
-    function render(el, tpl, data) {
-        el.innerHTML = '';
-        if (data !== undefined && data !== null) {
-            el.appendChild(_frag(_tpl(tpl), data));
-        }
-    }
-    function get(el) {
-        return obj(el);
-    }
-    function set(el, data) {
-        obj(el, data);
-    }
-    function patch(el, data) {
-        obj(el, Object.assign(obj(el), data));
-    }
-    function append(el, tpl, data) {
-        _iter(el, tpl, data, 'appendChild');
-    }
-    function prepend(el, tpl, data) {
-        _iter(el, tpl, data.reverse(), 'prepend');
-    }
-    function modify(el, callback) {
-        set(el, callback(obj(el)));
-    }
-    return {
-        append, arr, fx: {}, get, modify, obj, patch, prepend, render, set
-    };
-})();
-val.fx.object = {
-    get: (el) => el.attr('val-key') ? { [el.attr('val-key')]: val.obj(el) } : val.obj(el),
-    set: (el, data) => { el.attr('val-key') ? val.set(el, data[el.attr('val-key')]) : val.set(el, data) }
-};
-val.fx.array = {
-    get: (el) => ({ [el.attr('val-key')]: val.arr(el) }),
-    set: (el, data) => val.arr(el, el.attr('val-tpl'), data[el.attr('val-key')])
-};
-val.fx.render = {
-    get: (el) => ({ [el.attr('val-key')]: val.obj(el) }),
-    set: (el, data) => val.render(el, el.attr('val-tpl'), data[el.attr('val-key')])
-};
-val.fx.text = {
-    get: (el) => ({ [el.attr('val-key')]: el.textContent }),
-    set: (el, data) => { el.textContent = data[el.attr('val-key')]; }
-};
-val.fx.html = {
-    get: (el) => ({ [el.attr('val-key')]: el.innerHTML }),
-    set: (el, data) => { el.innerHTML = data[el.attr('val-key')]; }
-};
-val.fx.input = {
-    get: (el) => ({ [el.attr('val-key')]: el.value }),
-    set: (el, data) => { el.value = data[el.attr('val-key')] || ''; }
-};
-val.fx.show = {
-    get: (el) => ({ [el.attr('val-key')]: el.style.display !== 'none' }),
-    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? '' : 'none'; }
-};
-val.fx.hide = {
-    get: (el) => ({ [el.attr('val-key')]: el.style.display === 'none' }),
-    set: (el, data) => { el.style.display = data[el.attr('val-key')] ? 'none' : ''; }
-};
-val.fx.img = {
-    get: (el) => ({ [el.attr('val-key')]: el.src }),
-    set: (el, data) => { el.src = data[el.attr('val-key')]; }
-};
-val.fx.attr = {
-    get: (el) => ({ [el.attr('val-key')]: el.attr(el.attr('val-attr')) }),
-    set: (el, data) => { el.attr(el.attr('val-attr'), data[el.attr('val-key')]); }
-}
-val.fx.checkbox = {
-    get: (el) => ({ [el.attr('val-key')]: el.checked ? el.attr('val-check') : el.attr('val-uncheck') }),
-    set: (el, data) => { el.checked = data[el.attr('val-key')] === el.attr('val-check'); }
-};
-val.fx.if = {
-    get: (el) => {
-        return el.style.display !== 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
-    },
-    set: (el, data) => {
-        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? '' : 'none') : (data[el.attr('val-key')] ? '' : 'none');
-    }
-};
-val.fx.ifnot = {
-    get: (el) => {
-        return el.style.display === 'none' ? { [el.attr('val-key')]: el.attr('val-value') ? el.attr('val-value') : true } : {};
-    },
-    set: (el, data) => {
-        el.style.display = el.attr('val-value') ? (el.attr('val-value') === data[el.attr('val-key')] ? 'none' : '') : (data[el.attr('val-key')] ? 'none' : '');
-    }
-};
-</script>
-<script>
 App.Window = (() => {
 
     const Boot = () => {
         App.Router.OnBeforeNavigate(() => Toolbar().clear());
         App.Router.OnAfterNavigate(() => Topbar().patch({ index: [App.List.Controller, null].includes(App.Router.CurrentController())}));
         App.Task.Todo.subscribe((todo) => Topbar().patch({ todo }));
+        R(() => Topbar().patch({ all: App.Task.All() }));
     };
 
     const Title = (title) => document.title = title;
@@ -1220,7 +1318,7 @@ App.Window = (() => {
             <div onclick="App.Window.GoToTodo()" class="text-xl py-2 px-4 rounded-md font-medium cursor-pointer hover:bg-gray-200">
                 TODO
                 <span class="inline-block text-gray-400 font-light">
-                    <span val="text" val-key="todo"></span>
+                    <span val="text" val-key="todo"></span>/<span val="text" val-key="all"></span>
                 </span>
                 <span val="ifnot" val-key="index" class="inline-block text-gray-400 font-light">
                     [Esc]
@@ -1236,11 +1334,6 @@ App.Window = (() => {
     <div app-window-content></div>
 
 </div>
-
-<script>
-    App.Boot();
-</script>
-
+<script> App.Boot(); </script>
 </body>
-
-
+</html>

@@ -20,4 +20,5 @@ Example vanilia JS SPA TODO app using [DX](https://github.com/xtompie/dx) and [D
 - Global Registry Pattern, IoC - check Task module
 - Fully accessible via keyboard without the need for a mouse
 - PubSub example in App.Window.Boot - App.Router.OnBeforeNavigate
-- Reactivity example in App.Window.Boot - App.Task.Todo.subscribe
+- Rv - Reactive Value - example in App.Window.Boot - App.Task.Todo.subscribe
+- Rensen - Reavtive System - `App.Task.All` - <https://github.com/xtompie/rensenjs>
