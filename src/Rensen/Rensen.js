@@ -1,4 +1,4 @@
-const Rensen = module = (() => {
+const Rensen = (() => {
     class Rensen {
         static watchers = new Map();
         static inputs = new Map();
